@@ -25,7 +25,7 @@
 #define BANNER_VERSION 1
 #define BANNER_SIZE 24
 
-#define DEFAULT_SOCKET_NAME "minicap"
+#define DEFAULT_SOCKET_PORT 4949
 #define DEFAULT_DISPLAY_ID 0
 #define DEFAULT_JPG_QUALITY 80
 
@@ -38,9 +38,9 @@ enum {
 static void
 usage(const char* pname) {
   fprintf(stderr,
-    "Usage: %s [-h] [-n <name>]\n"
+    "Usage: %s [-h]\n"
     "  -d <id>:       Display ID. (%d)\n"
-    "  -n <name>:     Change the name of the abtract unix domain socket. (%s)\n"
+    "  -p <value>:    Change the port socket server listens to. (%d)\n"
     "  -P <value>:    Display projection (<w>x<h>@<w>x<h>/{0|90|180|270}).\n"
     "  -Q <value>:    JPEG quality (0-100).\n"
     "  -s:            Take a screenshot and output it to stdout. Needs -P.\n"
@@ -49,7 +49,7 @@ usage(const char* pname) {
     "  -t:            Attempt to get the capture method running, then exit.\n"
     "  -i:            Get display information in JSON format. May segfault.\n"
     "  -h:            Show help.\n",
-    pname, DEFAULT_DISPLAY_ID, DEFAULT_SOCKET_NAME
+    pname, DEFAULT_DISPLAY_ID, DEFAULT_SOCKET_PORT
   );
 }
 
@@ -209,9 +209,9 @@ signal_handler(int signum) {
 int
 main(int argc, char* argv[]) {
   const char* pname = argv[0];
-  const char* sockname = DEFAULT_SOCKET_NAME;
   uint32_t displayId = DEFAULT_DISPLAY_ID;
   unsigned int quality = DEFAULT_JPG_QUALITY;
+  unsigned int sockport = DEFAULT_SOCKET_PORT;
   int framePeriodMs = 0;
   bool showInfo = false;
   bool takeScreenshot = false;
@@ -220,14 +220,14 @@ main(int argc, char* argv[]) {
   Projection proj;
 
   int opt;
-  while ((opt = getopt(argc, argv, "d:n:P:Q:r:siSth")) != -1) {
+  while ((opt = getopt(argc, argv, "d:p:P:Q:r:siSth")) != -1) {
     float frameRate;
     switch (opt) {
     case 'd':
       displayId = atoi(optarg);
       break;
-    case 'n':
-      sockname = optarg;
+    case 'p':
+      sockport = atoi(optarg);
       break;
     case 'P': {
       Projection::Parser parser;
@@ -442,8 +442,8 @@ main(int argc, char* argv[]) {
     return EXIT_SUCCESS;
   }
 
-  if (!server.start(sockname)) {
-    MCERROR("Unable to start server on namespace '%s'", sockname);
+  if (!server.start(sockport)) {
+    MCERROR("Unable to start server on port '%d'", sockport);
     goto disaster;
   }
 
